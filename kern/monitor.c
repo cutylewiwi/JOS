@@ -8,6 +8,7 @@
 #include <inc/x86.h>
 #include <inc/attributed.h>
 
+#include <kern/pmap.h>
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
@@ -25,7 +26,10 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
-	{ "backtrace", "Display the trace of the stack", mon_backtrace},
+	{ "backtrace", "Display the trace of the stack", mon_backtrace },
+#ifdef MAPPINGDEBUG
+	{ "showmapping", "Display the mapping for the physical memory address", mon_showmapping },
+#endif
 	{ "cutytest", "cuty-lewiwi needs to test some functions", mon_cutytest},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
@@ -84,12 +88,118 @@ mon_cutytest(int argc, char **argv, struct Trapframe *tf)
 	cprintf("cutytest:\n");
 	//cprintf("%d %d %d\n", COLOR_BLUE, COLOR_GREEN, COLOR_RED);
 	//cprintf("%m%s\n%m%s\n%m%s\n", COLOR_BLUE, "blue", COLOR_GREEN, "green", COLOR_RED, "red");
-	int x = 1, y = 3, z = 4;
-	cprintf("x %d, y %x, z %d\n", x, y, z);
+	//int x = 1, y = 3, z = 4;
+	//cprintf("x %d, y %x, z %d\n", x, y, z);
+	cprintf("%s: %d\n%s: %d\n%s: %d\n", 
+		"090", my_atoi("090"), "0x10", my_atoi("0x10"), "10", my_atoi("10"));
     cprintf("\n");
 	return 0;
 }
 
+#ifdef MAPPINGDEBUG
+// showmapping for lab 2 challenge
+int
+mon_showmapping(int argc, char **argv, struct Trapframe *tf)
+{
+	int i, end;
+
+	if (argc != 3){
+		cprintf("usage: <%s> -start -end\n", argv[0]);
+		return 0;
+	}
+
+	for (i = my_atoi(argv[1]), end = my_atoi(argv[2]); i <= end; i++){
+		
+	}
+
+	return 0;
+}
+
+int 
+my_atoi(char * input)
+{
+	int result = 0;
+	int mode = 0;
+	// 0: origin
+	// 1: first 0
+	// 2: 16 base or 8 base
+	// 3: 10 base
+	int base = 10;
+	int delta = 0;
+	char * origin = input;
+	while (*input){
+		switch (*input){
+			case '0':
+				if (!mode){
+					mode = 1;
+				}
+				break;
+			case 'x':
+				if (mode == 1){
+					mode = 2;
+					base = 16;
+				}
+				break;
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+				if (mode == 1){
+					mode = 2;
+					base = 8;
+				}
+				// fall through
+			case '8':
+			case '9':
+				delta = (*input) - '0';
+				if (!mode){
+					mode = 3;
+					base = 10;
+				}
+				break;
+			case 'a':
+			case 'b':
+			case 'c':
+			case 'd':
+			case 'e':
+			case 'f':
+				delta = (*input) - 'a' + 10;
+				if (mode == 1){
+					mode = 2;
+					base = 16;
+				}
+				break;
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
+				delta = (*input) - 'A' + 10;
+				if (mode == 1){
+					mode = 2;
+					base = 16;
+				}
+				break;
+			default:
+				cprintf("my_atoi: cant recognized input: %s\n", origin);
+				return -1;
+		}
+		if (delta >= base){
+			cprintf("my_atoi: illegal input string!\n");
+			return -1;
+		}
+		result = result * base + delta;
+		delta = 0;
+		input ++;
+	}
+	return result;
+}
+
+#endif
 
 /***** Kernel monitor command interpreter *****/
 
