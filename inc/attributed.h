@@ -1,0 +1,14 @@
+#ifndef JOS_STRING_ATTRIBUTED
+#define JOS_STRING_ATTRIBUTED
+
+#define COLOR_BLUE			0x0100
+#define COLOR_GREEN			0x0200
+#define COLOR_RED			0x0400
+#define COLOR_WHITE			0x0700
+#define BACKGROUND_BLUE		0x1000
+#define BACKGROUND_GREEN	0x2000
+#define BACKGROUND_RED		0x4000
+
+#endif
+
+int string_color;
