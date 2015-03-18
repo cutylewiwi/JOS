@@ -8,10 +8,13 @@
 #include <inc/x86.h>
 #include <inc/attributed.h>
 
-#include <kern/pmap.h>
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
+
+#ifdef MAPPINGDEBUG
+#include <kern/pmap.h>
+#endif
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -28,7 +31,9 @@ static struct Command commands[] = {
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
 	{ "backtrace", "Display the trace of the stack", mon_backtrace },
 #ifdef MAPPINGDEBUG
-	{ "showmapping", "Display the mapping for the physical memory address", mon_showmapping },
+	{ "showmappings", "Display the mapping for the physical memory address", mon_showmappings },
+	{ "chpermissions", "change the permission of mapping to virtual address", mon_chpermissons },
+	{ "coredump", "core dump", mon_coredump},
 #endif
 	{ "cutytest", "cuty-lewiwi needs to test some functions", mon_cutytest},
 };
@@ -90,8 +95,9 @@ mon_cutytest(int argc, char **argv, struct Trapframe *tf)
 	//cprintf("%m%s\n%m%s\n%m%s\n", COLOR_BLUE, "blue", COLOR_GREEN, "green", COLOR_RED, "red");
 	//int x = 1, y = 3, z = 4;
 	//cprintf("x %d, y %x, z %d\n", x, y, z);
-	cprintf("%s: %d\n%s: %d\n%s: %d\n", 
-		"090", my_atoi("090"), "0x10", my_atoi("0x10"), "10", my_atoi("10"));
+	printpage((void *)my_atoi("0xf0000000"), my_atoi("0xf0000000"));
+	//cprintf("%s: %d\n%s: %d\n%s: %d\n", 
+	//	"090", my_atoi("090"), "0x10", my_atoi("0x10"), "10", my_atoi("10"));
     cprintf("\n");
 	return 0;
 }
@@ -99,20 +105,154 @@ mon_cutytest(int argc, char **argv, struct Trapframe *tf)
 #ifdef MAPPINGDEBUG
 // showmapping for lab 2 challenge
 int
-mon_showmapping(int argc, char **argv, struct Trapframe *tf)
+mon_showmappings(int argc, char **argv, struct Trapframe *tf)
 {
-	int i, end;
+	int i;
+	void * va, * end;
+	struct PageInfo * mapping;
+	pte_t * pte;
 
 	if (argc != 3){
-		cprintf("usage: <%s> -start -end\n", argv[0]);
+		cprintf("usage: <%s> -va_start -va_end\n", argv[0]);
 		return 0;
 	}
-
-	for (i = my_atoi(argv[1]), end = my_atoi(argv[2]); i <= end; i++){
+	cprintf("VA\t\tPA\t\tPERMISSIONS\n");
+	
+	va = (void *)ROUNDDOWN((char *)my_atoi(argv[1]), PGSIZE);
+	end = (void *)my_atoi(argv[2]);
+	for (; end - va >= PGSIZE; va += PGSIZE){
+		mapping = page_lookup(kern_pgdir, va, &pte);
 		
+		if (mapping){
+			cprintf("%p\t%p\t", va, page2pa(mapping));
+			for (i = 0; i < 12; i++){
+				if ((1 << (11 - i)) & *pte){
+					cprintf("%c","---GSDACTUWP"[i]);
+				}
+				else{
+					cprintf("-");
+				}
+			}
+			cprintf("\n");
+		}
+		else{
+			cprintf("%p\tNULL\t------------\n", va);
+		}
 	}
 
 	return 0;
+}
+
+// change permissions for lab 2 challenge
+int
+mon_chpermissons(int argc, char **argv, struct Trapframe *tf)
+{
+	pte_t * pte;
+	void * va;
+	int permissions;
+
+	if (argc != 3){
+		cprintf("usage: <%s> -va -permissions\n", argv[0]);
+		return 0;
+	}
+
+	va = (void *)ROUNDDOWN((char *)my_atoi(argv[1]), PGSIZE);
+	pte = pgdir_walk(kern_pgdir, va, 0);
+	permissions = my_atoi(argv[2]) & 0xFFF;
+	*pte |= permissions;
+	return 0;
+}
+
+// core dump for lab 2 challenge
+int 
+mon_coredump(int argc, char **argv, struct Trapframe *tf)
+{
+	void * va;
+	unsigned int page_start, page_end, i;
+	volatile pte_t * pte;
+	int flag;
+	if (argc != 4 || (argv[1][1] != 'p' && argv[1][1] != 'v')){
+		cprintf("usage: <%s> -p/v -va_start -va_end\n", argv[0]);
+		return 0;
+	}
+
+	page_start = (unsigned int)ROUNDDOWN((char *)my_atoi(argv[2]), PGSIZE);
+	page_end = (unsigned int)ROUNDUP((char *)my_atoi(argv[3]), PGSIZE);
+
+	if (argv[1][1] == 'p') {
+		cprintf("Physical Address:\n");
+	}
+	else {
+		cprintf("Virtual Address:\n");
+	}
+
+	for (i = page_start; i <= page_end; i += PGSIZE){
+		if (argv[1][1] == 'v'){
+			va = (void *)i;
+			pte = pgdir_walk(kern_pgdir, va, 0);
+			
+			if (!(pte && (*pte & PTE_P))) {
+				cprintf("no mapping at virtual page: %p\n", (void *)i);
+				continue;
+			}
+		}
+		else{
+			va = pa2va(i, &flag);
+			if (!flag){
+				cprintf("no mapping at physical page: %p\n", (void *)i);
+				continue;
+			}
+		}
+
+		printpage(va, i);
+	}
+
+	return 0;
+}
+
+void *
+pa2va(physaddr_t pa, int *flag)
+{
+	int i;
+	void * va;
+	pte_t * pte;
+	*flag = 0;
+	for (i = 0, va = (void *)0; i < (1 << 20); i++, va += PGSIZE){
+		pte = pgdir_walk(kern_pgdir, va, 0);
+		if (pte && (*pte & PTE_P) && PTE_ADDR(*pte) == (pa & ~0xFFF)){
+			*flag = 1;
+			break;
+		}
+	}
+	return va;
+}
+
+void printpage(void * va, int start)
+{
+	void * end;
+	unsigned int * ptr;
+	int i;
+	char c;
+	void * hold = va;
+	cprintf("%p\n", va + PGSIZE - 1);
+	for (end = va + PGSIZE - 1; va <= end; va += 4 * sizeof(int)){
+		ptr = (unsigned int *)va;
+		cprintf("%p ", (void *)(start + va - hold));
+		cprintf("0x%08x ", *ptr);
+		cprintf("0x%08x ", *(ptr+1));
+		cprintf("0x%08x ", *(ptr+2));
+		cprintf("0x%08x ", *(ptr+3));
+		for (i = 0; i < 16; i++){
+			c = *(char *)(va+i);
+			if (c <= 32){
+				cprintf("·");
+			}
+			else{
+				cprintf("%c", c);
+			}
+		}
+		cprintf("\n");
+	}
 }
 
 int 

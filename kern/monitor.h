@@ -19,7 +19,11 @@ int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
 int mon_cutytest(int argc, char **argv, struct Trapframe *tf);
 
 #ifdef MAPPINGDEBUG
-int mon_showmapping(int argc, char **argv, struct Trapframe *tf);
+void printpage(void *, int);
+void * pa2va(physaddr_t pa, int *flag);
+int mon_showmappings(int argc, char **argv, struct Trapframe *tf);
+int mon_chpermissons(int argc, char **argv, struct Trapframe *tf);
+int mon_coredump(int argc, char **argv, struct Trapframe *tf);
 int my_atoi(char * input);
 #endif
 
