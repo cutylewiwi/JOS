@@ -185,6 +185,16 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
+	e->env_pgdir = (pde_t *) p;
+	// As kernel's pgdir is in its .bss segment, it will be mapped to corrrect physics memory
+	// when mapping whole kernel. However, for env_pgdir, it is only allocated by page_alloc,
+	// so we have to maintain its pp_ref.
+	p->pp_ref ++;				
+
+    boot_map_region(e->env_pgdir, UPAGES, ROUNDUP(sizeof(struct PageInfo) * npages, PGSIZE), PADDR(pages), PTE_U);
+    boot_map_region(e->env_pgdir, UENVS, ROUNDUP(sizeof(struct PageInfo) * NENV, PGSIZE), PADDR(envs), PTE_U);
+    boot_map_region(e->env_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
+    boot_map_region(e->env_pgdir, KERNBASE, (1 << 28), (physaddr_t)0, PTE_W);
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
