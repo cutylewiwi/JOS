@@ -120,7 +120,7 @@ env_init(void)
 	env_free_list = NULL;
 	for (i = NENV - 1; i >= 0; i--){
 		envs[i].env_link = env_free_list;
-		env_free_list = envs[i].env_link;
+		env_free_list = &envs[i];
 	}
 
 	// Per-CPU part of the initialization
@@ -185,14 +185,15 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
-	e->env_pgdir = (pde_t *) p;
+	e->env_pgdir = (pde_t *) page2kva(p);
 	// As kernel's pgdir is in its .bss segment, it will be mapped to corrrect physics memory
 	// when mapping whole kernel. However, for env_pgdir, it is only allocated by page_alloc,
 	// so we have to maintain its pp_ref.
-	p->pp_ref ++;				
+	p->pp_ref ++;	
+	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);			
 
     //boot_map_region(e->env_pgdir, UPAGES, ROUNDUP(sizeof(struct PageInfo) * npages, PGSIZE), PADDR(pages), PTE_U);
-    //boot_map_region(e->env_pgdir, UENVS, ROUNDUP(sizeof(struct PageInfo) * NENV, PGSIZE), PADDR(envs), PTE_U);
+    //boot_map_region(e->env_pgdir, UENVS, ROUNDUP(sizeof(struct Env) * NENV, PGSIZE), PADDR(envs), PTE_U);
     //boot_map_region(e->env_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
     //boot_map_region(e->env_pgdir, KERNBASE, -KERNBASE, (physaddr_t)0, PTE_W);
 
