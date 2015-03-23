@@ -275,12 +275,10 @@ page_init(void)
     // 0 and from IOPHYSMEM to NEXTFREE
     
     size_t i;
-    size_t nextfree_page_index = PADDR(boot_alloc(0)) / PGSIZE;
-    size_t IOPHYSMEM_page_index = IOPHYSMEM / PGSIZE;
     
     for (i = 1; i < npages; i++){
         
-        if (i >= IOPHYSMEM_page_index && i < nextfree_page_index){
+        if (i >= PGNUM(IOPHYSMEM) && i < PGNUM(PADDR(boot_alloc(0)))){
             continue;
         }
         
