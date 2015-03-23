@@ -15,6 +15,7 @@
 
 #ifdef MAPPINGDEBUG
 #include <kern/pmap.h>
+#include <inc/mmu.h>
 #endif
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
@@ -88,6 +89,20 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 
 
 // use to test some functions
+
+//#define PGSIZE (1<<12)
+
+void test(void *va, int len)
+{
+	cprintf("va: %p, len: %d\n", va, len);
+	cprintf("va: %p\n", va);
+	va = ROUNDDOWN(va, PGSIZE);
+	cprintf("rounddown: %p\n", va);
+	cprintf("va+len: %p\n", va+len);
+	void * end = ROUNDUP(va+len, PGSIZE);
+	cprintf("roundup: %p\n", end);
+}
+
 int
 mon_cutytest(int argc, char **argv, struct Trapframe *tf)
 {
@@ -96,7 +111,15 @@ mon_cutytest(int argc, char **argv, struct Trapframe *tf)
 	//cprintf("%m%s\n%m%s\n%m%s\n", COLOR_BLUE, "blue", COLOR_GREEN, "green", COLOR_RED, "red");
 	//int x = 1, y = 3, z = 4;
 	//cprintf("x %d, y %x, z %d\n", x, y, z);
-	printpage((void *)my_atoi("0xf0000000"), my_atoi("0xf0000000"));
+	//printpage((void *)my_atoi("0xf0000000"), my_atoi("0xf0000000"));
+	test((void *)0x0, 10);
+	test((void *)0x2000, 10);
+	test((void *)0x2000, PGSIZE);
+	test((void *)0x2001, PGSIZE-1);
+	test((void *)0x2001, PGSIZE-2);
+	test((void *)0x2001, 2*PGSIZE);
+	test((void *)0xfffff000, 10);
+
 	//cprintf("%s: %d\n%s: %d\n%s: %d\n", 
 	//	"090", my_atoi("090"), "0x10", my_atoi("0x10"), "10", my_atoi("10"));
     cprintf("\n");
