@@ -588,6 +588,23 @@ tlb_invalidate(pde_t *pgdir, void *va)
     invlpg(va);
 }
 
+//
+// ilog2: calculate log2(x)
+// origin from seter in 2015 ICS data lab
+//
+int 
+ilog2(int x) {
+    int ans = (!(x >> 16)) << 4;
+    ans ^= (!(x << ans >> 24)) << 3;
+    ans ^= 28;
+    ans ^= (!(x >> ans)) << 2;
+    x = x >> ans;
+    ans ^= ((~0x5B) >> (x & 30)) & 3;
+    return ans;
+}
+
+
+
 
 // --------------------------------------------------------------
 // Checking functions.
