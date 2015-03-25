@@ -472,7 +472,7 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 static void
 boot_map_region_kernel_4M_page_size()
 {
-    void * va = KERNBASE;
+    void * va = (void *)KERNBASE;
     size_t i;
     int index;
     pde_t * pde;
@@ -482,7 +482,7 @@ boot_map_region_kernel_4M_page_size()
     
     for (i = 0; i < page_num; i++, va += page_size, pa += page_num){
         index = PDX(va);
-        pde = kern_pgdir[index];
+        pde = kern_pgdir + index;
 
         *pde = pa | PTE_W | PTE_PS | PTE_P;
     }
@@ -493,9 +493,8 @@ boot_map_region_kernel_4M_page_size()
 int
 could_use_4M_page_size()
 {
-    int edx;
     int ret = 0;
-    unsigned int cr4;
+    unsigned int cr4, edx;
     
     cpuid(0x1, NULL, NULL, NULL, &edx);
     if (edx & (1 << 3)){
