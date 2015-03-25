@@ -18,6 +18,12 @@ pde_t *kern_pgdir;		// Kernel's initial page directory
 struct PageInfo *pages;		// Physical page state array
 static struct PageInfo *page_free_list;	// Free list of physical pages
 
+
+// challenge 1
+int could_use_4M_page_size();
+static void boot_map_region_kernel_4M_page_size();
+
+
 // --------------------------------------------------------------
 // Detect machine's physical memory setup.
 // --------------------------------------------------------------
@@ -206,7 +212,12 @@ mem_init(void)
     // we just set up the mapping anyway.
     // Permissions: kernel RW, user NONE
     // Your code goes here:
-    boot_map_region(kern_pgdir, KERNBASE, -KERNBASE, (physaddr_t)0, PTE_W);
+    if (could_use_4M_page_size()){
+        boot_map_region_kernel_4M_page_size();
+    }
+    else{
+        boot_map_region(kern_pgdir, KERNBASE, -KERNBASE, (physaddr_t)0, PTE_W);
+    }
     
     // Check that the initial page directory has been set up correctly.
     check_kern_pgdir();
@@ -453,6 +464,46 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
         
  	  	   *pte = pa | perm | PTE_P;
    	}
+}
+
+
+// map kernel using 4M page size in lab2
+
+static void
+boot_map_region_kernel_4M_page_size()
+{
+    void * va = KERNBASE;
+    size_t i;
+    int index;
+    pde_t * pde;
+    physaddr_t pa = 0;
+    unsigned int page_size = 1 << 22;
+    unsigned int page_num = ((unsigned int)-KERNBASE) / page_size;
+    
+    for (i = 0; i < page_num; i++, va += page_size, pa += page_num){
+        index = PDX(va);
+        pde = kern_pgdir[index];
+
+        *pde = pa | PTE_W | PTE_PS | PTE_P;
+    }
+}
+
+// detect if could use 4M page size
+
+int
+could_use_4M_page_size()
+{
+    int edx;
+    int ret = 0;
+    unsigned int cr4;
+    
+    cpuid(0x1, NULL, NULL, NULL, &edx);
+    if (edx & (1 << 3)){
+        cr4 = rcr4();
+        ret = cr4 | CR4_PSE;
+    }
+
+    return ret;
 }
 
 //
