@@ -417,6 +417,7 @@ env_create(uint8_t *binary, enum EnvType type)
 		panic("env_create: %e", flag);
 	}
 	load_icode(env, binary);
+	env->env_type = type;
 }
 
 //
