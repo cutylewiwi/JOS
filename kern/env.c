@@ -394,11 +394,10 @@ load_icode(struct Env *e, uint8_t *binary)
 
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
-	pp = page_alloc(0);
-	page_insert(e->env_pgdir, pp, (void *)(USTACKTOP-PGSIZE), PTE_W | PTE_U);
 
 	// LAB 3: Your code here.
-
+	pp = page_alloc(0);
+	page_insert(e->env_pgdir, pp, (void *)(USTACKTOP-PGSIZE), PTE_W | PTE_U);
 }
 
 //
