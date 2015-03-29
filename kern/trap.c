@@ -65,6 +65,7 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+	/*
 	extern void Handler0();
 	extern void Handler1();
 	extern void Handler2();
@@ -86,7 +87,7 @@ trap_init(void)
 	SETGATE(idt[0], 0, GD_KT, Handler0, 0);
 	SETGATE(idt[1], 0, GD_KT, Handler1, 0);
 	SETGATE(idt[2], 0, GD_KT, Handler2, 0);
-	SETGATE(idt[3], 0, GD_KT, Handler3, 0);
+	SETGATE(idt[3], 0, GD_KT, Handler3, 3);
 	SETGATE(idt[4], 0, GD_KT, Handler4, 0);
 	SETGATE(idt[5], 0, GD_KT, Handler5, 0);
 	SETGATE(idt[6], 0, GD_KT, Handler6, 0);
@@ -101,6 +102,17 @@ trap_init(void)
 	SETGATE(idt[17], 0, GD_KT, Handler17, 0);
 	SETGATE(idt[18], 0, GD_KT, Handler18, 0);
 	SETGATE(idt[19], 0, GD_KT, Handler19, 0);
+	*/
+	extern int trapentry_idt[];
+	int i;
+	for (i = 0; i < 20; i++){
+		if (i == T_BRKPT){
+			SETGATE(idt[i], 0, GD_KT, trapentry_idt[i], 3);
+		}
+		else if (i != 9 && i != 15){
+			SETGATE(idt[i], 0, GD_KT, trapentry_idt[i], 0);
+		}
+	}
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -181,6 +193,12 @@ trap_dispatch(struct Trapframe *tf)
 
 	if (tf->tf_trapno == T_PGFLT) {
 		page_fault_handler(tf);
+		return;
+	}
+	
+	if (tf->tf_trapno == T_BRKPT) {
+		monitor(tf);
+		return;
 	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
