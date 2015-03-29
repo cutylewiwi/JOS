@@ -85,13 +85,16 @@ trapentry_idt:
 	TABLE_EC(Handler17, 17)
 	TABLE_NOEC(Handler18, 18)
 	TABLE_NOEC(Handler19, 19)
+.data
+	.space 112
+	TABLE_NOEC(System_call, 48)
 
 .text
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
-
+//TRAPHANDLER_NOEC(System_call, 48)
 /*
 TRAPHANDLER_NOEC(Handler0, 0)
 TRAPHANDLER_NOEC(Handler1, 1)
@@ -122,7 +125,7 @@ _alltraps:
 	pushl %es
 	pushal
 	pushl %esp
-	movw $GD_KD, %ax
+	movw $GD_KD, %ax 
 	movw %ax, %ds
 	movw %ax, %es
 	call trap

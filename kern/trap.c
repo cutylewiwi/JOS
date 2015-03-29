@@ -113,6 +113,7 @@ trap_init(void)
 			SETGATE(idt[i], 0, GD_KT, trapentry_idt[i], 0);
 		}
 	}
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, trapentry_idt[T_SYSCALL], 3);
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -191,13 +192,27 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 
+	// page fault
 	if (tf->tf_trapno == T_PGFLT) {
 		page_fault_handler(tf);
 		return;
 	}
-	
+
+	// break point
 	if (tf->tf_trapno == T_BRKPT) {
 		monitor(tf);
+		return;
+	}
+
+	// system call
+	if (tf->tf_trapno == T_SYSCALL) {
+		//%eax, %edx, %ecx, %ebx, %edi, and %esi,
+		tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax,
+									  tf->tf_regs.reg_edx,
+									  tf->tf_regs.reg_ecx,
+									  tf->tf_regs.reg_ebx,
+									  tf->tf_regs.reg_edi,
+									  tf->tf_regs.reg_esi);
 		return;
 	}
 
