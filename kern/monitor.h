@@ -27,4 +27,8 @@ int mon_coredump(int argc, char **argv, struct Trapframe *tf);
 int my_atoi(char * input);
 #endif
 
+// debugging for lab 3 challenge 2
+int mon_continue(int argc, char **argv, struct Trapframe *tf);
+int mon_singlestep(int argc, char **argv, struct Trapframe *tf);
+
 #endif	// !JOS_KERN_MONITOR_H

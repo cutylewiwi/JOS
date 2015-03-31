@@ -12,6 +12,7 @@
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
 #include <kern/trap.h>
+#include <kern/env.h>
 
 #ifdef MAPPINGDEBUG
 #include <kern/pmap.h>
@@ -38,6 +39,10 @@ static struct Command commands[] = {
 	{ "coredump", "core dump", mon_coredump},
 #endif
 	{ "cutytest", "cuty-lewiwi needs to test some functions", mon_cutytest},
+	{ "continue", "continue execution", mon_continue},
+	{ "c", "continue execution", mon_continue},
+	{ "stepi", "single step instruction", mon_singlestep},
+	{ "si", "single step instruction", mon_singlestep}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -124,6 +129,33 @@ mon_cutytest(int argc, char **argv, struct Trapframe *tf)
 	//	"090", my_atoi("090"), "0x10", my_atoi("0x10"), "10", my_atoi("10"));
     cprintf("\n");
 	return 0;
+}
+
+// continue in debug mode
+int
+mon_continue(int argc, char **argv, struct Trapframe *tf)
+{
+	unsigned int eflags;
+	if (tf && (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG)) {
+		tf->tf_eflags &= ~(1 << 8);
+		env_run(curenv);
+	}
+	else{
+		cprintf("<%s>: not in breaking point mode!\n", *argv);
+	}
+	return 0;
+}
+
+
+// single step instruction mode
+int
+mon_singlestep(int argc, char **argv, struct Trapframe *tf)
+{
+	if (tf && (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG)) {
+		tf->tf_eflags |= (1 << 8);
+		env_run(curenv);
+	}
+	return 0;	
 }
 
 #ifdef MAPPINGDEBUG
