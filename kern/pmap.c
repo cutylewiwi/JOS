@@ -632,22 +632,16 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
     pte_t * pte;
     void * end = (void *)va + len - 1;
     void * istart, *iend;
-    
-    if (va > (void *)ULIM) {
-        user_mem_check_addr = (uintptr_t)va;
-        return -E_FAULT;
-    }
-
-    if (end >= (void *)ULIM) {
-        user_mem_check_addr = ULIM;
-        return -E_FAULT;
-    }
 
     istart = ROUNDDOWN((void *)va, PGSIZE);
-    iend = ROUNDDOWN(end, PGSIZE);
-    for (; istart <= iend; istart += PGSIZE) {
+    iend = ROUNDUP((void *)(va + len), PGSIZE);
+
+    for (; istart < iend; istart += PGSIZE) {
         pte = pgdir_walk(env->env_pgdir, istart, 0);
-        if (!pte || !(*pte & PTE_P) || (*pte & perm) != perm){
+        if (istart >= (void *)ULIM 
+            || !pte 
+            || !(*pte & PTE_P) 
+            || (*pte & perm) != perm){
             user_mem_check_addr = istart <= va ? (uintptr_t)va : (uintptr_t)istart;
             return -E_FAULT;
         }
