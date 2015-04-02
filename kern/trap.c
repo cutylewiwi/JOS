@@ -72,7 +72,17 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
-
+	extern int trapentry_idt[];
+	int i;
+	for (i = 0; i < 20; i++){
+		if (i == T_BRKPT){
+			SETGATE(idt[i], 0, GD_KT, trapentry_idt[i], 3);
+		}
+		else if (i != 9 && i != 15){
+			SETGATE(idt[i], 0, GD_KT, trapentry_idt[i], 0);
+		}
+	}
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, trapentry_idt[T_SYSCALL], 3);
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -174,12 +184,27 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 
-	// Handle spurious interrupts
-	// The hardware sometimes raises these because of noise on the
-	// IRQ line or other reasons. We don't care.
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
-		cprintf("Spurious interrupt on irq 7\n");
-		print_trapframe(tf);
+	// page fault
+	if (tf->tf_trapno == T_PGFLT) {
+		page_fault_handler(tf);
+		return;
+	}
+
+	// break point and debug
+	if (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG) {
+		monitor(tf);
+		return;
+	}
+
+	// system call
+	if (tf->tf_trapno == T_SYSCALL) {
+		//%eax, %edx, %ecx, %ebx, %edi, and %esi,
+		tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax,
+									  tf->tf_regs.reg_edx,
+									  tf->tf_regs.reg_ecx,
+									  tf->tf_regs.reg_ebx,
+									  tf->tf_regs.reg_edi,
+									  tf->tf_regs.reg_esi);
 		return;
 	}
 
@@ -268,6 +293,10 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+	if (!(tf->tf_cs & 0x3)) {
+		cprintf("cr2: 0x%08x\n", rcr2());
+		panic("page_fault_handler: page fault in kernel mode! cs: %08x", tf->tf_cs);
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.

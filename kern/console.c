@@ -5,12 +5,15 @@
 #include <inc/kbdreg.h>
 #include <inc/string.h>
 #include <inc/assert.h>
+#include <inc/attributed.h>
 
 #include <kern/console.h>
 #include <kern/picirq.h>
 
 static void cons_intr(int (*proc)(void));
 static void cons_putc(int c);
+
+//extern int string_color;
 
 // Stupid I/O delay routine necessitated by historical PC design flaws
 static void
@@ -164,8 +167,9 @@ static void
 cga_putc(int c)
 {
 	// if no attribute given, then use black on white
+	if (!string_color) string_color = COLOR_WHITE;
 	if (!(c & ~0xFF))
-		c |= 0x0700;
+		c |= string_color;
 
 	switch (c & 0xff) {
 	case '\b':
