@@ -193,7 +193,11 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
-    boot_map_region(kern_pgdir, UPAGES, ROUNDUP(sizeof(struct PageInfo) * npages, PGSIZE), PADDR(pages), PTE_U);
+    boot_map_region(kern_pgdir, 
+                    UPAGES, 
+                    ROUNDUP(sizeof(struct PageInfo) * npages, PGSIZE), 
+                    PADDR(pages), 
+                    PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
@@ -202,7 +206,11 @@ mem_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
-    boot_map_region(kern_pgdir, UENVS, ROUNDUP(sizeof(struct Env) * NENV, PGSIZE), PADDR(envs), PTE_U);
+    boot_map_region(kern_pgdir, 
+                    UENVS, 
+                    ROUNDUP(sizeof(struct Env) * NENV, PGSIZE), 
+                    PADDR(envs), 
+                    PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -215,7 +223,11 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
-    boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
+    boot_map_region(kern_pgdir, 
+                    KSTACKTOP - KSTKSIZE, 
+                    KSTKSIZE, 
+                    PADDR(bootstack), 
+                    PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -225,7 +237,11 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
-    boot_map_region(kern_pgdir, KERNBASE, -KERNBASE, (physaddr_t)0, PTE_W);
+    boot_map_region(kern_pgdir, 
+                    KERNBASE, 
+                    -KERNBASE, 
+                    (physaddr_t)0, 
+                    PTE_W);
 
 	// Initialize the SMP-related parts of the memory map
 	mem_init_mp();
@@ -278,6 +294,18 @@ mem_init_mp(void)
 	//
 	// LAB 4: Your code here:
 
+    int i;
+    uintptr_t kstacktop_i;
+
+    for (i = 0; i < NCPU; i++) {
+        kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
+        boot_map_region(kern_pgdir, 
+                        kstacktop_i - KSTKSIZE, 
+                        KSTKSIZE, 
+                        PADDR(percpu_kstacks[i]), 
+                        PTE_W);
+    }
+
 }
 
 // --------------------------------------------------------------
@@ -324,12 +352,14 @@ page_init(void)
     // kernel
     // allocated physics page by boot_alloc
     // 0 and from IOPHYSMEM to NEXTFREE
+    // lab 4: page at MPENTRY_PADDR
     
     size_t i;
     
     for (i = 1; i < npages; i++){
         
-        if (i >= PGNUM(IOPHYSMEM) && i < PGNUM(PADDR(boot_alloc(0)))){
+        if ((i >= PGNUM(IOPHYSMEM) && i < PGNUM(PADDR(boot_alloc(0))))
+            || i == PGNUM(MPENTRY_PADDR)){
             continue;
         }
         
@@ -670,7 +700,22 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	//panic("mmio_map_region not implemented");
+
+    void * ret = (void *)base;
+    size = ROUNDUP(size, PGSIZE);
+
+    if (base + size > MMIOLIM) {
+        panic("mmio_map_region: mmio map overflow MMIOLIM!");
+    }
+
+    boot_map_region(kern_pgdir, 
+                    base, 
+                    size,
+                    pa,
+                    PTE_PCD | PTE_PWT | PTE_W);
+    base += size;
+    return ret;
 }
 
 static uintptr_t user_mem_check_addr;
