@@ -85,7 +85,19 @@ sys_exofork(void)
 	// will appear to return 0.
 
 	// LAB 4: Your code here.
-	panic("sys_exofork not implemented");
+	// panic("sys_exofork not implemented");
+
+	struct Env * forkEnv;
+	int flag;
+
+	if ((flag = env_alloc(&forkEnv, curenv->env_id)) < 0) {
+		return flag;
+	}
+
+	forkEnv->env_status = ENV_NOT_RUNNABLE;
+	memcpy(forkEnv->env_tf, curenv->env_tf, sizeof(struct Trapframe));
+	forkEnv->env_tf.reg_eax = 0;
+	return forkEnv->env_id;
 }
 
 // Set envid's env_status to status, which must be ENV_RUNNABLE
@@ -105,7 +117,20 @@ sys_env_set_status(envid_t envid, int status)
 	// envid's status.
 
 	// LAB 4: Your code here.
-	panic("sys_env_set_status not implemented");
+	//panic("sys_env_set_status not implemented");
+
+	struct Env * env;
+
+	if (status != ENV_RUNNABLE && status != ENV_NOT_RUNNABLE) {
+		return -E_INVAL;
+	}
+	if (envid2env(envid, &env, 1)) {
+		return -E_BAD_ENV;
+	}
+
+	env->env_status = status;
+
+	return 0;
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -277,7 +302,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
 	switch (syscallno) {
 		case SYS_cputs:
-			sys_cputs((const char *)a1, (size_t)a2);
+			sys_cputs((const char *)a1, 
+					  (size_t)a2);
 			return 0;
 		case SYS_cgetc:
 			return sys_cgetc();
@@ -285,6 +311,24 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_getenvid();
 		case SYS_env_destroy:
 			return sys_env_destroy((envid_t)a1);
+		case SYS_page_alloc:
+			return sys_page_alloc((envid_t)a1,
+								  (void *)a2, 
+								  (int)a3);
+		case SYS_page_map:
+			return sys_page_map((envid_t)a1,
+								(void *)a2,
+								(envid_t)a3,
+								(void *)a4,
+								(int)a5);
+		case SYS_page_unmap:
+			return sys_page_unmap((envid_t)a1,
+								  (void *)a2);
+		case SYS_exofork:
+			return sys_exofork();
+		case SYS_env_set_status:
+			return sys_env_set_status((envid_t)a1,
+									  (int)a2);
 		case SYS_yield:
 			sys_yield();
 			return 0;
