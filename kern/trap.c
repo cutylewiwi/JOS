@@ -335,6 +335,11 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 4: Your code here.
 
+	if (curenv->env_pgfault_upcall
+		&& 1) {
+		((void *(void)) (curenv->env_pgfault_upcall)) ();
+	}
+
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",
 		curenv->env_id, fault_va, tf->tf_eip);
