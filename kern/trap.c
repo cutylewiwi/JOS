@@ -239,7 +239,7 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 3: Your code here.
 	if (!(tf->tf_cs & 0x3)) {
-		cprintf("cr2: 0x%08x\n", rcr2());
+		cprintf("cr2: 0x%08x\n", fault_va);
 		panic("page_fault_handler: page fault in kernel mode! cs: %08x", tf->tf_cs);
 	}
 
