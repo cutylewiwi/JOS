@@ -95,9 +95,7 @@ sys_exofork(void)
 	}
 
 	forkEnv->env_status = ENV_NOT_RUNNABLE;
-	memcpy((void *)&forkEnv->env_tf, 
-		   (void *)&curenv->env_tf, 
-		   sizeof(struct Trapframe));
+	forkEnv->env_tf = curenv->env_tf;
 	forkEnv->env_tf.tf_regs.reg_eax = 0;
 	return forkEnv->env_id;
 }
@@ -405,6 +403,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_env_set_status:
 			return sys_env_set_status((envid_t)a1,
 									  (int)a2);
+		case SYS_env_set_pgfault_upcall:
+			return sys_env_set_pgfault_upcall((envid_t)a1,
+											   (void *)a2);
 		case SYS_yield:
 			sys_yield();
 			return 0;
