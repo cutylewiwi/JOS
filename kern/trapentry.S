@@ -87,7 +87,8 @@ trapentry_idt:
 	TABLE_NOEC(Handler18, 18)
 	TABLE_NOEC(Handler19, 19)
 .data
-	.space 112
+	.space 4 * (IRQ_OFFSET - 20)
+	.space 4 * (T_SYSCALL - IRQ_OFFSET - 16)
 	TABLE_NOEC(System_call, 48)
 
 .text
