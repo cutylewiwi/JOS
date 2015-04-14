@@ -29,19 +29,21 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
-	struct Env * pivot = curenv ? curenv : envs;
-	idle = pivot;
-	do {
-		if (idle->env_status == ENV_RUNNABLE) {
+	struct Env * e;
+	int i, j;
+
+	idle = curenv;
+
+	j = curenv ? ENVX(curenv->env_id) : 0;
+
+	for (i = 0; i < NENV; i++, j = (j + 1) % NENV) {
+		if (envs[j].env_status == ENV_RUNNABLE) {
+			idle = envs + j;
 			break;
 		}
-		idle ++;
-		if (idle >= envs + NENV) {
-			idle = envs;
-		}
-	}while (idle != pivot);
-	// runnable user environment exists
-	if (idle != curenv 
+	}
+
+	if (idle != curenv
 		|| (curenv && curenv->env_status == ENV_RUNNING)) {
 		env_run(idle);
 	}

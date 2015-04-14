@@ -97,6 +97,7 @@ sys_exofork(void)
 	forkEnv->env_status = ENV_NOT_RUNNABLE;
 	forkEnv->env_tf = curenv->env_tf;
 	forkEnv->env_tf.tf_regs.reg_eax = 0;
+
 	return forkEnv->env_id;
 }
 
@@ -341,7 +342,46 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	//panic("sys_ipc_try_send not implemented");
+
+	struct Env * e;
+	struct PageInfo * pp = NULL;
+	pte_t * pte;
+	
+	if (envid2env(envid, &e, 0) < 0) {
+		return -E_BAD_ENV;
+	}
+
+	if (!(e->env_ipc_recving)) {
+		return -E_IPC_NOT_RECV;
+	}
+	
+	if ((unsigned int)srcva < UTOP 
+			&& (((unsigned int)srcva & 0xFFF)
+				|| (perm & ~PTE_SYSCALL)
+				|| !(pp = page_lookup(curenv->env_pgdir, srcva, &pte))
+				|| ((*pte ^ perm) & PTE_W))) {
+		return -E_INVAL;
+	}
+
+	e->env_ipc_recving = 0;
+	e->env_ipc_from = curenv->env_id;
+	e->env_ipc_value = value;
+	e->env_tf.tf_regs.reg_eax = 0;
+	
+	if ((unsigned int)srcva < UTOP) {
+		 
+		if ((unsigned int)(e->env_ipc_dstva) < UTOP
+			&& page_insert(e->env_pgdir, pp, e->env_ipc_dstva, perm) < 0){
+			return -E_NO_MEM;
+		}
+
+		e->env_ipc_perm = perm;
+	}
+
+	e->env_status = ENV_RUNNABLE;
+
+	return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -359,7 +399,19 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+	//panic("sys_ipc_recv not implemented");
+
+	if ((unsigned int)dstva < UTOP
+		&& ((unsigned int)dstva & 0xFFF)) {
+		return -E_INVAL;
+	}
+
+	curenv->env_ipc_recving = 1;
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+
+	sched_yield();
+
 	return 0;
 }
 
@@ -409,6 +461,13 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_yield:
 			sys_yield();
 			return 0;
+		case SYS_ipc_try_send:
+			return sys_ipc_try_send((envid_t)a1,
+									a2,
+									(void *)a3,
+									(unsigned int)a4);
+		case SYS_ipc_recv:
+			return sys_ipc_recv((void *)a1);
 		default:
 			return -E_INVAL;
 			//return -E_NO_SYS;

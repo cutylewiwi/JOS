@@ -82,8 +82,8 @@ trap_init(void)
 			SETGATE(idt[i], 0, GD_KT, trapentry_idt[i], 0);
 		}
 	}
-	for (i = IRQ_OFFSET; i <= IRQ_OFFSET + 15; i++) {
-		SETGATE(idt[i], 0, GD_KT, trapentry_idt[i], 0);
+	for (i = 0; i < 16; i++) {
+		SETGATE(idt[IRQ_OFFSET + i], 0, GD_KT, trapentry_idt[IRQ_OFFSET + i], 0);
 	}
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, trapentry_idt[T_SYSCALL], 3);
 	// Per-CPU setup 
@@ -214,12 +214,22 @@ trap_dispatch(struct Trapframe *tf)
 		return;
 	}
 
+	// Handle spurious interrupts
+	// The hardware sometimes raises these because of noise on the
+	// IRQ line or other reasons. We don't care.
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
+		cprintf("Spurious interrupt on irq 7\n");
+		print_trapframe(tf);
+		return;
+	}
+
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
-	if (tf->tf_trapno == IRQ_OFFSET) {
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
 		lapic_eoi();
 		sched_yield();
+		return;
 	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
@@ -340,7 +350,6 @@ page_fault_handler(struct Trapframe *tf)
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
 	// LAB 4: Your code here.
-
 	struct UTrapframe * utrapframe;
 
 	if (curenv->env_pgfault_upcall) {

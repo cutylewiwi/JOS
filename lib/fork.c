@@ -77,12 +77,12 @@ duppage(envid_t envid, unsigned pn)
 	// LAB 4: Your code here.
 	//panic("duppage not implemented");
 
-	int perm = uvpt[pn] & 0xFFF;
+	int perm;
 	void * va = (void *)(pn * PGSIZE);
 
 	//cprintf("perm: 0x%x\n", perm);
 
-	if (perm & (PTE_W | PTE_COW)) {
+	if (uvpt[pn] & (PTE_W | PTE_COW)) {
 		perm = PTE_COW | PTE_U | PTE_P;
 	}
 	else {
@@ -92,14 +92,12 @@ duppage(envid_t envid, unsigned pn)
 	//asm volatile("int $3");
 
 	if ((r = sys_page_map(0, va, envid, va, perm)) < 0) {
-		//cprintf("%p\n", va);
-		//cprintf("perm: %08x\n", perm);
-		panic("duppage(): sys_page_map() failed: %e", r);
+		panic("duppage(): sys_page_map() failed: %e\nva: %p\tenvid: %d\tperm: %08x\n", r, va, envid, perm);
 	}
 
 	if ((perm & PTE_COW) 
 		&& (r = sys_page_map(0, va, 0, va, perm)) < 0) {
-		panic("duppage(): sys_page_map() for self failed: %e", r);
+		panic("duppage(): sys_page_map() for self failed: %e\nva: %p\tperm: %08x\n", r, va, perm);
 	}
 
 	return 0;
@@ -129,7 +127,7 @@ fork(void)
 
 	envid_t child;
 	int r;
-	int perm;
+	//int perm;
 	void * va;
 
 	set_pgfault_handler(pgfault);
@@ -141,18 +139,19 @@ fork(void)
 		thisenv = &envs[ENVX(sys_getenvid())];
 	}
 	else {
-
-		for (va = (void *)UTEXT; va < (void *)(UXSTACKTOP - PGSIZE); va += PGSIZE) {
+		
+		for (va = (void *)UTEXT; va < (void *)USTACKTOP; va += PGSIZE) {
+			
 			if (!(uvpd[PDX(va)] & PTE_P)
-				|| !(uvpt[PGNUM(va)] & PTE_P)) {
+				|| !(uvpt[PGNUM(va)] & PTE_P)
+				|| !(uvpt[PGNUM(va)] & PTE_U)) {
 				continue;
 			}
+
 			duppage(child, PGNUM(va));
 		}
 
-		if ((r = sys_page_alloc(child, (void *)(UXSTACKTOP - PGSIZE), PTE_U | PTE_W)) < 0) {
-			panic("fork(): sys_page_alloc() failed: %e", r);
-		}
+		sys_page_alloc(child, (void *)(UXSTACKTOP - PGSIZE), PTE_U | PTE_W);
 
 		extern void _pgfault_upcall();
 
