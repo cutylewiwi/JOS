@@ -108,3 +108,23 @@ _alltraps:
 	movw %ax, %ds
 	movw %ax, %es
 	call trap
+
+/*
+ * sysenter handler
+ */
+
+.globl _syscall_handler
+_syscall_handler:
+	pushl %esi
+	pushl %ebp
+	pushl $0
+	pushl %edi
+	pushl %ebx
+	pushl %ecx
+	pushl %edx
+	pushl %eax
+	call syscall
+	addl $24, %esp
+	popl %ecx
+	popl %edx
+	sysexit

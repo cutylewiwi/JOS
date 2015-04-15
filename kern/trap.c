@@ -25,6 +25,26 @@ struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
 };
 
+#ifdef SYSENTER_ENABLE
+// system init
+void
+syscall_init(void)
+{
+	uint32_t edx;
+	
+	extern int _syscall_handler;
+
+	cpuid(1, NULL, NULL, NULL, &edx);
+
+	if ((edx >> CPUID_EDX_MSR_BIT) & 1) {
+		wrmsr(MSR_IA32_SYSENTER_CS, GD_KT, 0);
+		wrmsr(MSR_IA32_SYSENTER_ESP, &ts.ts_esp0, 0);
+		wrmsr(MSR_IA32_SYSENTER_EIP, &_syscall_handler, 0);
+	}
+}
+
+#endif
+
 
 static const char *trapname(int trapno)
 {
@@ -76,6 +96,10 @@ trap_init(void)
 		}
 	}
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, trapentry_idt[T_SYSCALL], 3);
+
+#ifdef SYSENTER_ENABLE
+	syscall_init();
+#endif
 	// Per-CPU setup 
 	trap_init_percpu();
 }

@@ -3,6 +3,19 @@
 
 #include <inc/types.h>
 
+#define CPUID_EDX_MSR_BIT	5 // MSR 寄存器是否启用
+#define CPUID_EDX_PSE_BIT	3 // 页大小扩展是否支持
+
+#define MSR_IA32_SYSENTER_CS	0x174
+#define MSR_IA32_SYSENTER_ESP	0x175
+#define MSR_IA32_SYSENTER_EIP	0x176
+
+
+#define wrmsr(msr,val1,val2) \
+	__asm__ __volatile__("wrmsr" \
+	: /* no outputs */ \
+	: "c" (msr), "a" (val1), "d" (val2))
+
 static __inline void breakpoint(void) __attribute__((always_inline));
 static __inline uint8_t inb(int port) __attribute__((always_inline));
 static __inline void insb(int port, void *addr, int cnt) __attribute__((always_inline));
