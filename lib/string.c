@@ -48,6 +48,14 @@ strcat(char *dst, const char *src)
 }
 
 char *
+strncat(char *dst, const char *src, size_t size)
+{
+	int len = strlen(dst);
+	strncpy(dst + len, src, size);
+	return dst;
+}
+
+char *
 strncpy(char *dst, const char *src, size_t size) {
 	size_t i;
 	char *ret;

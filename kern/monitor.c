@@ -14,6 +14,8 @@
 #include <kern/trap.h>
 #include <kern/env.h>
 
+#include <kern/libdisasm/libdis.h>
+
 #ifdef MAPPINGDEBUG
 #include <kern/pmap.h>
 #include <inc/mmu.h>
@@ -147,6 +149,10 @@ mon_continue(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+/*
+ * help functions
+ */
+void disas_nextInst(struct Trapframe *tf);
 
 // single step instruction mode
 int
@@ -154,6 +160,7 @@ mon_singlestep(int argc, char **argv, struct Trapframe *tf)
 {
 	if (tf && (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG)) {
 		tf->tf_eflags |= (1 << 8);
+		disas_nextInst(tf);
 		//env_run(curenv);
 		return -1;			// break out from the monitor mode
 	}
@@ -266,6 +273,19 @@ mon_coredump(int argc, char **argv, struct Trapframe *tf)
 	}
 
 	return 0;
+}
+
+void
+disas_nextInst(struct Trapframe *tf)
+{
+	static char buf[1024] = {0};
+	if (!tf) {
+		return;
+	}
+	disassemble_init(0, ATT_SYNTAX);
+	sprint_address(buf, 1023, (void *)tf->tf_eip);
+	cprintf("current instruction 0x%08x: %s\n", tf->tf_eip, buf);
+	disassemble_cleanup();
 }
 
 void *

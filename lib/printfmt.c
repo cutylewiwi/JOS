@@ -234,6 +234,7 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 
 		// (unsigned) hexadecimal
 		case 'x':
+		case 'X':
 			num = getuint(&ap, lflag);
 			base = 16;
 		number:
