@@ -127,7 +127,6 @@ fork(void)
 
 	envid_t child;
 	int r;
-	//int perm;
 	void * va;
 
 	set_pgfault_handler(pgfault);
@@ -136,7 +135,7 @@ fork(void)
 		panic("fork(): sys_exofork() failed: %e", child);
 	}
 	else if (child == 0) {
-		thisenv = &envs[ENVX(sys_getenvid())];
+		thisenv = getThisenv();
 	}
 	else {
 		
@@ -172,6 +171,65 @@ fork(void)
 int
 sfork(void)
 {
-	panic("sfork not implemented");
-	return -E_INVAL;
+	//panic("sfork not implemented");
+	envid_t child;
+	int r;
+	void * va;
+
+	set_pgfault_handler(pgfault);
+
+	if ((child = sys_exofork()) < 0) {
+		panic("sfork(): sys_exofork() failed: %e", child);
+	}
+	else if (child > 0) {
+
+		cprintf("child: %d\n", child);
+
+		va = (void *)(USTACKTOP - PGSIZE);
+		r = 0;
+
+		while ((uvpd[PDX(va)] & PTE_P)
+				&& (uvpt[PGNUM(va)] & PTE_P)) {
+			duppage(child, PGNUM(va));
+			va -= PGSIZE;
+			r ++;
+		}
+
+		cprintf("dup: %x\n", r);
+
+		for (; va >= (void *)UTEXT; va -= PGSIZE) {
+
+			if (!(uvpd[PDX(va)] & PTE_P)
+				|| !(uvpt[PGNUM(va)] & PTE_P)
+				|| !(uvpt[PGNUM(va)] & PTE_U)) {
+				continue;
+			}
+
+			//if (va == (void *)0x801000) {
+			//	cprintf("123\n");
+			//}
+
+			if (sys_page_map(0, va, child, va, PTE_U | PTE_P | (uvpt[PGNUM(va)] & PTE_W)) < 0) {
+				panic("sfork(): sys_page_map() error!");
+			}
+		}
+
+		sys_page_alloc(child, (void *)(UXSTACKTOP - PGSIZE), PTE_U | PTE_W);
+
+		extern void _pgfault_upcall();
+
+		if ((r = sys_env_set_pgfault_upcall(child, _pgfault_upcall)) < 0) {
+			panic("sfork(): sys_env_set_pgfault_upcall() failed: %e", r);
+		}
+
+		//cprintf("handler: %p\n", _pgfault_upcall);
+		//cprintf("set: %p\n", envs[ENVX(child)].env_pgfault_upcall);
+
+		if ((r = sys_env_set_status(child, ENV_RUNNABLE)) < 0) {
+			panic("sfork(): sys_env_setstatus() failed: %e", r);
+		}
+
+	}
+
+	return child;
 }

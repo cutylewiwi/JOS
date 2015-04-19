@@ -352,6 +352,8 @@ page_fault_handler(struct Trapframe *tf)
 	// LAB 4: Your code here.
 	struct UTrapframe * utrapframe;
 
+	//cprintf("%x: %p\n", curenv->env_id, (void *)fault_va);
+
 	if (curenv->env_pgfault_upcall) {
 
 		if (tf->tf_esp >= UXSTACKTOP - PGSIZE

@@ -26,16 +26,17 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 	//panic("ipc_recv not implemented");
 
 	int r = sys_ipc_recv(pg ? pg : (void *)UTOP);
+	struct Env * this = getThisenv();	// fixed for sfork()
 
 	if (from_env_store) {
-		*from_env_store = r ? 0 : thisenv->env_ipc_from;
+		*from_env_store = r ? 0 : this->env_ipc_from;
 	}
 
 	if (perm_store) {
-		*perm_store = r ? 0 : thisenv->env_ipc_perm;
+		*perm_store = r ? 0 : this->env_ipc_perm;
 	}
 
-	return thisenv->env_ipc_value;
+	return this->env_ipc_value;
 }
 
 // Send 'val' (and 'pg' with 'perm', if 'pg' is nonnull) to 'toenv'.
@@ -63,6 +64,7 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 
 	if (r
 		&& r != -E_IPC_NOT_RECV) {
+		cprintf("to_env: %x\n", to_env);
 		panic("ipc_send(): error: %e", r);
 	}
 }

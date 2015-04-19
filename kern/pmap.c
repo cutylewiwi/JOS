@@ -570,19 +570,6 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
         return -E_NO_MEM;
     }
     
-    // remove if va is alraedy mapped with a pa
-    /*
-    if (*pte & PTE_P){
-        if (PTE_ADDR(*pte) == page2pa(pp)){
-            pp -> pp_ref --;
-            tlb_invalidate(pgdir, va);
-        }
-        else{
-            page_remove(pgdir, va);
-        }
-    }
-    */
-    
     //retain first then remove
     pp->pp_ref ++;
     page_remove(pgdir, va);
