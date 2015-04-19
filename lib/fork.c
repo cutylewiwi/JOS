@@ -80,16 +80,12 @@ duppage(envid_t envid, unsigned pn)
 	int perm;
 	void * va = (void *)(pn * PGSIZE);
 
-	//cprintf("perm: 0x%x\n", perm);
-
 	if (uvpt[pn] & (PTE_W | PTE_COW)) {
 		perm = PTE_COW | PTE_U | PTE_P;
 	}
 	else {
 		perm = PTE_U | PTE_P;
 	}
-
-	//asm volatile("int $3");
 
 	if ((r = sys_page_map(0, va, envid, va, perm)) < 0) {
 		panic("duppage(): sys_page_map() failed: %e\nva: %p\tenvid: %d\tperm: %08x\n", r, va, envid, perm);
@@ -192,10 +188,7 @@ sfork(void)
 				&& (uvpt[PGNUM(va)] & PTE_P)) {
 			duppage(child, PGNUM(va));
 			va -= PGSIZE;
-			r ++;
 		}
-
-		cprintf("dup: %x\n", r);
 
 		for (; va >= (void *)UTEXT; va -= PGSIZE) {
 
@@ -204,10 +197,6 @@ sfork(void)
 				|| !(uvpt[PGNUM(va)] & PTE_U)) {
 				continue;
 			}
-
-			//if (va == (void *)0x801000) {
-			//	cprintf("123\n");
-			//}
 
 			if (sys_page_map(0, va, child, va, PTE_U | PTE_P | (uvpt[PGNUM(va)] & PTE_W)) < 0) {
 				panic("sfork(): sys_page_map() error!");
@@ -221,9 +210,6 @@ sfork(void)
 		if ((r = sys_env_set_pgfault_upcall(child, _pgfault_upcall)) < 0) {
 			panic("sfork(): sys_env_set_pgfault_upcall() failed: %e", r);
 		}
-
-		//cprintf("handler: %p\n", _pgfault_upcall);
-		//cprintf("set: %p\n", envs[ENVX(child)].env_pgfault_upcall);
 
 		if ((r = sys_env_set_status(child, ENV_RUNNABLE)) < 0) {
 			panic("sfork(): sys_env_setstatus() failed: %e", r);

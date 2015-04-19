@@ -29,7 +29,6 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
-	struct Env * e;
 	int i, j;
 
 	idle = curenv;
