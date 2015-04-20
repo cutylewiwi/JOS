@@ -64,7 +64,7 @@ readn(int f, void *out, size_t n)
 	size_t p = 0;
 	while (p < n) {
 		size_t m = read(f, out + p, n - p);
-		if (m < 0)
+		if ((int)m < 0)
 			panic("read: %s", strerror(errno));
 		if (m == 0)
 			panic("read: Unexpected EOF");
