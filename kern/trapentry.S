@@ -42,15 +42,86 @@
 	pushl $(num);							\
 	jmp _alltraps
 
+
+/*
+ * lab 3 challenge 1
+ */
+
+#define TABLE_NOEC(name, num)				\
+.data;										\
+	.long name;								\
+.text;										\
+	TRAPHANDLER_NOEC(name, num)
+
+#define TABLE_EC(name, num)					\
+.data;										\
+	.long name;								\
+.text; 										\
+	TRAPHANDLER(name, num)
+
+
+.data
+	.globl trapentry_idt
+	.align 2
+trapentry_idt:
+	TABLE_NOEC(Handler0, 0)
+	TABLE_NOEC(Handler1, 1)
+	TABLE_NOEC(Handler2, 2)
+	TABLE_NOEC(Handler3, 3)
+	TABLE_NOEC(Handler4, 4)
+	TABLE_NOEC(Handler5, 5)
+	TABLE_NOEC(Handler6, 6)
+	TABLE_NOEC(Handler7, 7)
+	TABLE_EC(Handler8, 8)
+.data
+	.long 0					/* trap 9 */
+	TABLE_EC(Handler10, 10)
+	TABLE_EC(Handler11, 11)
+	TABLE_EC(Handler12, 12)
+	TABLE_EC(Handler13, 13)
+	TABLE_EC(Handler14, 14)
+.data
+	.long 0					/* trap 15 */
+	TABLE_NOEC(Handler16, 16)
+	TABLE_EC(Handler17, 17)
+	TABLE_NOEC(Handler18, 18)
+	TABLE_NOEC(Handler19, 19)
+.data
+	.space 48
+	TABLE_NOEC(Handler32, 32)
+	TABLE_NOEC(Handler33, 33)
+	TABLE_NOEC(Handler34, 34)
+	TABLE_NOEC(Handler35, 35)
+	TABLE_NOEC(Handler36, 36)
+	TABLE_NOEC(Handler37, 37)
+	TABLE_NOEC(Handler38, 38)
+	TABLE_NOEC(Handler39, 39)
+	TABLE_NOEC(Handler40, 40)
+	TABLE_NOEC(Handler41, 41)
+	TABLE_NOEC(Handler42, 42)
+	TABLE_NOEC(Handler43, 43)
+	TABLE_NOEC(Handler44, 44)
+	TABLE_NOEC(Handler45, 45)
+	TABLE_NOEC(Handler46, 46)
+	TABLE_NOEC(Handler47, 47)
+	TABLE_NOEC(System_call, 48)
+
 .text
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
-
-
 /*
  * Lab 3: Your code here for _alltraps
  */
 
+_alltraps:
+	pushl %ds
+	pushl %es
+	pushal
+	pushl %esp
+	movw $GD_KD, %ax 
+	movw %ax, %ds
+	movw %ax, %es
+	call trap
