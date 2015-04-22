@@ -77,11 +77,22 @@ duppage(envid_t envid, unsigned pn)
 	// LAB 4: Your code here.
 	//panic("duppage not implemented");
 
-	int perm = uvpt[pn] & PTE_SYSCALL;
+	int perm;
 	void * va = (void *)(pn * PGSIZE);
 
-	if (perm & (PTE_W | PTE_COW)) {
-		perm = (perm | PTE_COW) & ~PTE_W;
+	if (uvpt[pn] & PTE_SHARE) {
+		perm = uvpt[pn] & PTE_SYSCALL;
+		if ((r = sys_page_map(0, va, envid, va, perm)) < 0) {
+			panic("duppage(): sys_page_map() copy shared failed: %e", r);
+		}
+		return 0;
+	}
+
+	if (uvpt[pn] & (PTE_W | PTE_COW)) {
+		perm = PTE_COW | PTE_U | PTE_P;
+	}
+	else {
+		perm = PTE_U | PTE_P;
 	}
 
 	if ((r = sys_page_map(0, va, envid, va, perm)) < 0) {
