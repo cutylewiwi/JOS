@@ -139,7 +139,7 @@ mon_continue(int argc, char **argv, struct Trapframe *tf)
 {
 	unsigned int eflags;
 	if (tf && (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG)) {
-		tf->tf_eflags &= ~(1 << 8);
+		tf->tf_eflags &= ~FL_TF;
 		//env_run(curenv);
 		return -1;			// break out from the monitor mode
 	}
@@ -155,7 +155,7 @@ int
 mon_singlestep(int argc, char **argv, struct Trapframe *tf)
 {
 	if (tf && (tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG)) {
-		tf->tf_eflags |= (1 << 8);
+		tf->tf_eflags |= FL_TF;
 		//env_run(curenv);
 		return -1;			// break out from the monitor mode
 	}
