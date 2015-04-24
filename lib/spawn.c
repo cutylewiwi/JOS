@@ -153,11 +153,11 @@ spawnl(const char *prog, const char *arg0, ...)
 	// The contract of the function guarantees that the last
 	// argument will always be NULL, and that none of the other
 	// arguments will be NULL.
-	int argc=0;
+	int argc = 0;
 	va_list vl;
 	va_start(vl, arg0);
 	while(va_arg(vl, void *) != NULL)
-		argc++;
+		argc ++;
 	va_end(vl);
 
 	// Now that we have the size of the args, do a second pass

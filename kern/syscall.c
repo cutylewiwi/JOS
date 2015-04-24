@@ -440,6 +440,122 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
+/*
+ * set up a tmp pgdir
+ * and linked
+ */
+static int
+sys_exec_pre()
+{
+	struct Env * e;
+	struct PageInfo * pp;
+
+	envid2env(0, &e, 1);
+
+	if (!(pp = page_alloc(ALLOC_ZERO))) {
+		return -E_NO_MEM;
+	}
+
+	page_insert(curenv->env_pgdir, pp, EXECPGDIR, PTE_W);
+	memcpy(EXECPGDIR, kern_pgdir, PGSIZE);
+
+	// set up mapping of tmp pgdir in EXECPGDIR
+	EXECPGDIR[PDX(EXECPGDIR)] = curenv->env_pgdir[PDX(EXECPGDIR)];
+
+	return 0;
+}
+
+static int
+sys_exec_page_alloc(const void * va, int perm)
+{
+	struct PageInfo * newPage;
+	struct Env * e;
+
+	if (((unsigned int)va & 0xFFF) 
+		|| (unsigned int)va >= UTOP 
+		|| (perm & ~PTE_SYSCALL)) {
+		return -E_INVAL;
+	}
+
+	if (!(newPage = page_alloc(ALLOC_ZERO))) {
+		return -E_NO_MEM;
+	}
+
+	if (page_insert(EXECPGDIR, newPage, (void *)va, perm) < 0) {
+		page_free(newPage);
+		return -E_NO_MEM;
+	}
+
+	return 0;
+}
+
+static int
+sys_exec_page_map(const void * srcva, const void * dstva, int perm)
+{
+	struct Env * src, * dst;
+	struct PageInfo * pp;
+	pte_t * pte;
+
+	if ((unsigned int)srcva >= UTOP
+		|| (unsigned int)srcva & 0xFFF
+		|| (unsigned int)dstva >= UTOP
+		|| (unsigned int)dstva & 0xFFF
+		|| (perm & ~PTE_SYSCALL)
+		|| !(pp = page_lookup(curenv->env_pgdir, (void *)srcva, &pte))
+		|| ((perm & PTE_W) && !(*pte & PTE_W))) {
+		return -E_INVAL;
+	}
+
+	if (page_insert(EXECPGDIR, pp, (void *)dstva, perm) < 0) {
+		return -E_NO_MEM;
+	}
+
+	return 0;
+}
+
+static int
+sys_exec(struct Trapframe * tf)
+{
+	pte_t *pt;
+	uint32_t pdeno, pteno;
+	physaddr_t pa;
+	pde_t * pde = curenv->env_pgdir;
+	
+	curenv->env_tf = *tf;
+	curenv->env_status = ENV_RUNNABLE;
+
+	// release old physical pages
+	for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
+
+		// only look at mapped page tables
+		if (!(curenv->env_pgdir[pdeno] & PTE_P))
+			continue;
+
+		// find the pa and va of the page table
+		pa = PTE_ADDR(curenv->env_pgdir[pdeno]);
+		pt = (pte_t*) KADDR(pa);
+
+		// unmap all PTEs in this page table
+		for (pteno = 0; pteno <= PTX(~0); pteno++) {
+			if (PGADDR(pdeno, pteno, 0) != EXECPGDIR
+				&& (pt[pteno] & PTE_P))
+				page_remove(curenv->env_pgdir, PGADDR(pdeno, pteno, 0));
+		}
+
+		// free the page table itself
+		if (pdeno != PDX(EXECPGDIR)) {
+			curenv->env_pgdir[pdeno] = 0;
+			page_decref(pa2page(pa));
+		}
+	}
+
+	// change pgdir and remove tmp pgdir
+	memcpy(curenv->env_pgdir, EXECPGDIR, PGSIZE);
+	page_remove(curenv->env_pgdir, EXECPGDIR);
+
+	return 0;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -496,6 +612,20 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 									(unsigned int)a4);
 		case SYS_ipc_recv:
 			return sys_ipc_recv((void *)a1);
+
+		// exec groups
+		case SYS_exec_pre:
+			return sys_exec_pre();
+		case SYS_exec_page_alloc:
+			return sys_exec_page_alloc((const void *)a1,
+									   (int)a2);
+		case SYS_exec_page_map:
+			return sys_exec_page_map((const void *)a1,
+							   		 (const void *)a2,
+							   		 (int)a3);
+		case SYS_exec:
+			return sys_exec((struct Trapframe *)a1);
+
 		default:
 			return -E_INVAL;
 			//return -E_NO_SYS;

@@ -17,6 +17,13 @@ enum {
 	SYS_yield,
 	SYS_ipc_try_send,
 	SYS_ipc_recv,
+
+	// exec group
+	SYS_exec_pre,
+	SYS_exec_page_alloc,
+	SYS_exec_page_map,
+	SYS_exec,
+	
 	NSYSCALLS
 };
 

@@ -115,3 +115,28 @@ sys_ipc_recv(void *dstva)
 	return syscall(SYS_ipc_recv, 1, (uint32_t)dstva, 0, 0, 0, 0);
 }
 
+// exec groups
+int
+sys_exec_pre()
+{
+	return syscall(SYS_exec_pre, 0, 0, 0, 0, 0, 0);
+}
+
+int
+sys_exec_page_alloc(const void * va, int perm)
+{
+	return syscall(SYS_exec_page_alloc, 0, (uint32_t)va, (uint32_t)perm, 0, 0, 0);
+}
+
+int
+sys_exec_page_map(const void * oldva, const void * newva, int perm)
+{
+	return syscall(SYS_exec_page_map, 0, (uint32_t)oldva, (uint32_t)newva, (uint32_t)perm, 0, 0);
+}
+
+int
+sys_exec(struct Trapframe * tf)
+{
+	return syscall(SYS_exec, 0, (uint32_t)tf, 0, 0, 0, 0);
+}
+
