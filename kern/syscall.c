@@ -552,6 +552,7 @@ sys_exec(struct Trapframe * tf)
 	// change pgdir and remove tmp pgdir
 	memcpy(curenv->env_pgdir, EXECPGDIR, PGSIZE);
 	page_remove(curenv->env_pgdir, EXECPGDIR);
+	curenv->env_pgdir[PDX(EXECPGDIR)] = 0;
 
 	return 0;
 }
