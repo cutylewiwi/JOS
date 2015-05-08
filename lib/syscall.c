@@ -140,3 +140,13 @@ sys_exec(struct Trapframe * tf)
 	return syscall(SYS_exec, 0, (uint32_t)tf, 0, 0, 0, 0);
 }
 
+int sys_signal(envid_t envid, sig_t signal, void * handler)
+{
+	return syscall(SYS_signal, 0, (uint32_t)envid, (uint32_t)signal, (uint32_t)handler, 0, 0);
+}
+
+int sys_kill(envid_t envid, sig_t signal)
+{
+	return syscall(SYS_kill, 0, (uint32_t)envid, (uint32_t)signal, 0, 0, 0);
+}
+

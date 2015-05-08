@@ -11,6 +11,7 @@
 #include <kern/syscall.h>
 #include <kern/console.h>
 #include <kern/sched.h>
+#include <kern/signal.h>
 
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
@@ -557,6 +558,19 @@ sys_exec(struct Trapframe * tf)
 	return 0;
 }
 
+// signals
+static int
+sys_signal(envid_t envid, sig_t signal, void * handler)
+{
+	return set_signal_handler(envid, signal, handler);
+}
+
+static int
+sys_kill(envid_t envid, sig_t signal)
+{
+	return kill(envid, signal);
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -626,6 +640,16 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 							   		 (int)a3);
 		case SYS_exec:
 			return sys_exec((struct Trapframe *)a1);
+
+		// signals
+		case SYS_signal:
+			return sys_signal((envid_t)a1,
+							  (sig_t)a2,
+							  (void *)a3);
+
+		case SYS_kill:
+			return sys_kill((envid_t)a1,
+							(sig_t)a2);
 
 		default:
 			return -E_INVAL;

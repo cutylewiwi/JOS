@@ -23,6 +23,10 @@ enum {
 	SYS_exec_page_alloc,
 	SYS_exec_page_map,
 	SYS_exec,
+
+	// signals
+	SYS_signal,
+	SYS_kill,
 	
 	NSYSCALLS
 };

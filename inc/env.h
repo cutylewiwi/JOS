@@ -7,6 +7,8 @@
 #include <inc/trap.h>
 #include <inc/memlayout.h>
 
+#define SIGNALCOUNT 32
+
 typedef int32_t envid_t;
 
 // An environment ID 'envid_t' has three parts:
@@ -66,6 +68,10 @@ struct Env {
 	uint32_t env_ipc_value;		// Data value sent to us
 	envid_t env_ipc_from;		// envid of the sender
 	int env_ipc_perm;		// Perm of page mapping received
+
+	// final signals
+	unsigned signal_vector;		// signal bit vectors
+	void * signal_handlers[SIGNALCOUNT];	// signal handlers
 };
 
 #endif // !JOS_INC_ENV_H

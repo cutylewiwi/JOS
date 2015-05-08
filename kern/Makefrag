@@ -38,6 +38,9 @@ KERN_SRCFILES +=	kern/mpentry.S \
 			kern/lapic.c \
 			kern/spinlock.c
 
+# Source files for Final Project
+KERN_SRCFILES += kern/signal.c
+
 # Only build files if they exist.
 KERN_SRCFILES := $(wildcard $(KERN_SRCFILES))
 
@@ -94,6 +97,9 @@ KERN_BINFILES +=	user/testpteshare \
 
 # Binary files for LAB5 exec challenge
 KERN_BINFILES += user/exechello
+
+# Binary files for Final Project
+KERN_BINFILES += user/testsignal
 
 KERN_OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(KERN_SRCFILES))
 KERN_OBJFILES := $(patsubst %.S, $(OBJDIR)/%.o, $(KERN_OBJFILES))

@@ -14,6 +14,7 @@
 #include <kern/sched.h>
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
+#include <kern/signal.h>
 
 struct Env *envs = NULL;		// All environments
 static struct Env *env_free_list;	// Free environment list
@@ -579,6 +580,13 @@ env_run(struct Env *e)
 	
 	curenv = e;
 	e->env_status = ENV_RUNNING;
+
+	// handler signals
+	if (e->signal_vector & (1 << 2)) {
+		e->env_tf.tf_eip = (uintptr_t)e->signal_handlers[2];
+		e->signal_vector &= ~(1 << 2);
+	}
+
 	e->env_runs ++;
 	lcr3(PADDR(e->env_pgdir));
 	env_pop_tf(&e->env_tf);
