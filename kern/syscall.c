@@ -571,6 +571,30 @@ sys_kill(envid_t envid, sig_t signal)
 	return kill(envid, signal);
 }
 
+static void
+sys_after_signal_handler(struct SignalUTrapframe * utrapframe)
+{
+	curenv->env_tf.tf_regs = utrapframe->utf_regs;
+	curenv->env_tf.tf_eip = utrapframe->utf_eip;
+	curenv->env_tf.tf_esp = utrapframe->utf_esp;
+	//sched_yield();
+	env_run(curenv);
+}
+
+static int 
+sys_set_signal_upcall(envid_t envid, void * upcall)
+{
+	struct Env * e;
+	int r;
+	
+	if (envid2env(envid, &e, 0) < 0) {
+		return -E_BAD_ENV;
+	}
+
+	e->env_signal_upcall = upcall;
+	return 0;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -650,6 +674,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_kill:
 			return sys_kill((envid_t)a1,
 							(sig_t)a2);
+		case SYS_after_signal_handler:
+			sys_after_signal_handler((struct SignalUTrapframe *)a1);
+			return 0;
+		case SYS_set_signal_upcall:
+			return sys_set_signal_upcall((envid_t)a1,
+										 (void *)a2);
 
 		default:
 			return -E_INVAL;

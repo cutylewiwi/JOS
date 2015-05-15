@@ -4,6 +4,7 @@
 #include <inc/lib.h>
 
 extern void umain(int argc, char **argv);
+extern int sys_set_signal_upcall(envid_t envid, void * upcall);
 
 const volatile struct Env *thisenv;
 const char *binaryname = "<unknown>";
@@ -24,6 +25,13 @@ libmain(int argc, char **argv)
 	// save the name of the program so that panic() can use it
 	if (argc > 0)
 		binaryname = argv[0];
+
+	extern void _signal_upcall(void);
+	cprintf("upcall: 0x%08x\n", _signal_upcall);
+	if (sys_set_signal_upcall(0, _signal_upcall) < 0) {
+		cprintf("signal init failed!\n");
+		exit();
+	}
 
 	// call user main routine
 	umain(argc, argv);

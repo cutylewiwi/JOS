@@ -268,6 +268,8 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	// Also clear the IPC receiving flag.
 	e->env_ipc_recving = 0;
 
+	// Clear all signals and handlers
+	e->env_signal_vector = 0;
 	// commit the allocation
 	env_free_list = e->env_link;
 	*newenv_store = e;
@@ -452,6 +454,7 @@ env_free(struct Env *e)
 	pte_t *pt;
 	uint32_t pdeno, pteno;
 	physaddr_t pa;
+	int i;
 
 	// If freeing the current environment, switch to kern_pgdir
 	// before freeing the page directory, just in case the page
@@ -489,6 +492,11 @@ env_free(struct Env *e)
 	pa = PADDR(e->env_pgdir);
 	e->env_pgdir = 0;
 	page_decref(pa2page(pa));
+
+	// clear signal handlers
+	for (i = 0; i < 32; i++) {
+		e->env_signal_handlers[i] = NULL;
+	}
 
 	// return the environment to the free list
 	e->env_status = ENV_FREE;
@@ -582,11 +590,15 @@ env_run(struct Env *e)
 	e->env_status = ENV_RUNNING;
 
 	// handler signals
-	if (e->signal_vector & (1 << 2)) {
-		e->env_tf.tf_eip = (uintptr_t)e->signal_handlers[2];
-		e->signal_vector &= ~(1 << 2);
+	int i;
+	for (i = 0; i < 32; i++) {
+		if (e->env_signal_vector & (1 << i)) {
+			cprintf("1\n");
+			signal_handle(e->env_id, i);
+			cprintf("4\n");
+			break;
+		}
 	}
-
 	e->env_runs ++;
 	lcr3(PADDR(e->env_pgdir));
 	env_pop_tf(&e->env_tf);

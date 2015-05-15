@@ -327,6 +327,13 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 3: Your code here.
 	if (!(tf->tf_cs & 0x3)) {
+		cprintf("err: %08x\n", tf->tf_err);
+		cprintf("fault_va: %p\n", fault_va);
+		//int * uvpt = (int *)UVPT;
+		//pte_t * pte = (pte_t *)(uvpt + PGNUM(fault_va));
+		//print_trapframe(tf);
+		//cprintf("pte: %d\n", *pte);
+		//cprintf("pte: %08x\n", uvpt[PGNUM(fault_va)]);
 		panic("page_fault_handler: page fault in kernel mode! cr2: 0x%08x", fault_va);
 	}
 

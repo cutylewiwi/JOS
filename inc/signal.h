@@ -24,4 +24,17 @@ enum {
 int signal(sig_t signo, void * handler);
 int kill(envid_t envid, sig_t signal);
 
+#ifndef __ASSEMBLER__
+
+struct SignalUTrapframe {
+	uint32_t utf_sysno;
+	uint32_t utf_handler;
+	struct PushRegs utf_regs;
+	uint32_t utf_eip;
+	uint32_t utf_eflags;
+	uint32_t utf_esp;
+};
+
+#endif	/* !__ASSEMBLER__ */
+
 #endif /* !JOS_INC_SIGNAL_H */

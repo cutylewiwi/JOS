@@ -27,6 +27,8 @@ enum {
 	// signals
 	SYS_signal,
 	SYS_kill,
+	SYS_after_signal_handler,
+	SYS_set_signal_upcall,
 	
 	NSYSCALLS
 };

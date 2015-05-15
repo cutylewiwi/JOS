@@ -35,6 +35,8 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 			panic("set_pgfault_handler(): sys_page_alloc() failed!");
 		}
 
+		cprintf("aftet set exception stack!\n");
+
 		if (sys_env_set_pgfault_upcall(0, _pgfault_upcall) < 0){
 			panic("set_pgfault_handler(): sys_env_set_pgfault_upcall() failed!");
 		}

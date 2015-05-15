@@ -70,8 +70,9 @@ struct Env {
 	int env_ipc_perm;		// Perm of page mapping received
 
 	// final signals
-	unsigned signal_vector;		// signal bit vectors
-	void * signal_handlers[SIGNALCOUNT];	// signal handlers
+	unsigned env_signal_vector;		// signal bit vectors
+	void * env_signal_upcall;		// singal handler upcall
+	void * env_signal_handlers[SIGNALCOUNT];	// signal handlers
 };
 
 #endif // !JOS_INC_ENV_H
