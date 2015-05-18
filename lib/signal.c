@@ -5,9 +5,9 @@ extern int sys_kill(envid_t envid, sig_t signal);
 extern struct Env * thisenv;
 
 int 
-signal(sig_t signo, void * handler)
+signal(sig_t signo, void (* handler)(sig_t sig))
 {
-	return sys_signal(thisenv->env_id, signo, handler);
+	return sys_signal(thisenv->env_id, signo, (void *)handler);
 }
 
 int 

@@ -28,7 +28,7 @@ pgfault(struct UTrapframe *utf)
 
 	if (!(err & FEC_WR)
 		|| !(uvpt[PGNUM(addr)] & PTE_COW)) {
-		cprintf("%p\n", addr);
+		cprintf("fault_va: %p\n", addr);
 		panic("pgfault(): not %s!", (err & FEC_WR) ? "COW" : "write");
 	}
 

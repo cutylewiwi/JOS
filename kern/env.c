@@ -269,7 +269,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_ipc_recving = 0;
 
 	// Clear all signals and handlers
-	e->env_signal_vector = 0;
+	e->env_signal_pending = 0;
+	e->env_signal_blocked = 0;
+
 	// commit the allocation
 	env_free_list = e->env_link;
 	*newenv_store = e;
@@ -589,18 +591,18 @@ env_run(struct Env *e)
 	curenv = e;
 	e->env_status = ENV_RUNNING;
 
+	e->env_runs ++;
+	lcr3(PADDR(e->env_pgdir));
+
 	// handler signals
 	int i;
 	for (i = 0; i < 32; i++) {
-		if (e->env_signal_vector & (1 << i)) {
-			cprintf("1\n");
+		if ((~e->env_signal_blocked) & (e->env_signal_pending) & (1 << i)) {
 			signal_handle(e->env_id, i);
-			cprintf("4\n");
 			break;
 		}
 	}
-	e->env_runs ++;
-	lcr3(PADDR(e->env_pgdir));
+
 	env_pop_tf(&e->env_tf);
 	//panic("env_run not yet implemented");
 }

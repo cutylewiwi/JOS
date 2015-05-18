@@ -577,7 +577,7 @@ sys_after_signal_handler(struct SignalUTrapframe * utrapframe)
 	curenv->env_tf.tf_regs = utrapframe->utf_regs;
 	curenv->env_tf.tf_eip = utrapframe->utf_eip;
 	curenv->env_tf.tf_esp = utrapframe->utf_esp;
-	//sched_yield();
+	curenv->env_signal_blocked &= ~(1 << (utrapframe->utf_sysno));
 	env_run(curenv);
 }
 

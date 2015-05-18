@@ -27,7 +27,6 @@ libmain(int argc, char **argv)
 		binaryname = argv[0];
 
 	extern void _signal_upcall(void);
-	cprintf("upcall: 0x%08x\n", _signal_upcall);
 	if (sys_set_signal_upcall(0, _signal_upcall) < 0) {
 		cprintf("signal init failed!\n");
 		exit();

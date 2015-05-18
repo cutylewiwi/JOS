@@ -99,7 +99,9 @@ KERN_BINFILES +=	user/testpteshare \
 KERN_BINFILES += user/exechello
 
 # Binary files for Final Project
-KERN_BINFILES += user/testsignal
+KERN_BINFILES += user/testsignal \
+			user/testrecursivesignal \
+			user/testdefaultsignalhandler
 
 KERN_OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(KERN_SRCFILES))
 KERN_OBJFILES := $(patsubst %.S, $(OBJDIR)/%.o, $(KERN_OBJFILES))

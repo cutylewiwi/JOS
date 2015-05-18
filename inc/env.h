@@ -70,7 +70,8 @@ struct Env {
 	int env_ipc_perm;		// Perm of page mapping received
 
 	// final signals
-	unsigned env_signal_vector;		// signal bit vectors
+	unsigned env_signal_pending;	// signal pending bit vectors
+	unsigned env_signal_blocked;	// signal blocking bit vectors
 	void * env_signal_upcall;		// singal handler upcall
 	void * env_signal_handlers[SIGNALCOUNT];	// signal handlers
 };

@@ -7,9 +7,6 @@
 #include <inc/env.h>
 
 #define SIGNALCOUNT 32
-#define SIGIGN	0xffffffff
-#define SIGABT	0xfffffffe
-#define SIGNOR	0xfffffffd
 
 typedef int32_t sig_t;
 
@@ -21,7 +18,7 @@ enum {
 	NSYGNAL
 };
 
-int signal(sig_t signo, void * handler);
+int signal(sig_t signo, void (* handler)(sig_t sig));
 int kill(envid_t envid, sig_t signal);
 
 #ifndef __ASSEMBLER__
