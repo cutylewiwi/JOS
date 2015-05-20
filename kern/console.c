@@ -50,14 +50,28 @@ delay(void)
 #define   COM_LSR_TXRDY	0x20	//   Transmit buffer avail
 #define   COM_LSR_TSRE	0x40	//   Transmitter off
 
+#define SER_CTR_C 	0x03
+#define SER_CTR_Z 	0x1A	
+#define SER_CTR_DEL	0x7F
+
 static bool serial_exists;
 
 static int
 serial_proc_data(void)
 {
+	int c;
+	
 	if (!(inb(COM1+COM_LSR) & COM_LSR_DATA))
 		return -1;
-	return inb(COM1+COM_RX);
+	
+	c = inb(COM1+COM_RX);
+	cprintf("c = %d\n", c);
+
+	if (c == SER_CTR_C) {
+		signal_kill(0, SIGINT);
+	}
+
+	return c;
 }
 
 void
@@ -321,6 +335,9 @@ static uint8_t *charcode[4] = {
  * Get data from the keyboard.  If we finish a character, return it.  Else 0.
  * Return -1 if no data.
  */
+
+// always returned with -1; not know reason
+
 static int
 kbd_proc_data(void)
 {
@@ -352,7 +369,9 @@ kbd_proc_data(void)
 	shift ^= togglecode[data];
 
 	c = charcode[shift & (CTL | SHIFT)][data];
+	
 	if (!(~shift & (CTL)) && (c == 'c' || c == 'C')) {
+		cprintf("kbd ctr+c\n");
 		signal_kill(0, SIGINT);
 		return 0;
 	} 

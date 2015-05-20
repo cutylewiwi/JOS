@@ -122,6 +122,7 @@ signal_handle(envid_t envid, sig_t signal)
 
 	if (signal == SIGINT) {
 		cprintf("SIGINT!\n");
+		e->env_signal_blocked &= ~(1 << signal);
 		return;
 	}
 
