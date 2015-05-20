@@ -166,3 +166,15 @@ sys_set_signal_upcall(envid_t envid, void * upcall)
 	return syscall(SYS_set_signal_upcall, 0, (uint32_t)envid, (uint32_t)upcall, 0, 0, 0);
 }
 
+int
+sys_get_env_signal_blocked(envid_t envid)
+{
+	return syscall(SYS_get_env_signal_blocked, 0, (uint32_t)envid, 0, 0, 0, 0);
+}
+
+int
+sys_set_env_signal_blocked(envid_t envid, sigset_t sigset)
+{
+	return syscall(SYS_set_env_signal_blocked, 0, (uint32_t)envid, (uint32_t)sigset, 0, 0, 0);
+}
+

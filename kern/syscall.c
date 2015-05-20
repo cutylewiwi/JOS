@@ -568,7 +568,7 @@ sys_signal(envid_t envid, sig_t signal, void * handler)
 static int
 sys_kill(envid_t envid, sig_t signal)
 {
-	return kill(envid, signal);
+	return signal_kill(envid, signal);
 }
 
 static void
@@ -592,6 +592,31 @@ sys_set_signal_upcall(envid_t envid, void * upcall)
 	}
 
 	e->env_signal_upcall = upcall;
+	return 0;
+}
+
+static int
+sys_get_env_signal_blocked(envid_t envid)
+{
+	struct Env * e;
+
+	if (envid2env(envid, &e, 0) < 0) {
+		panic("sys_Get_env_signal_blocked: %e\n", -E_BAD_ENV);
+	}
+
+	return e->env_signal_blocked;
+}
+
+static int
+sys_set_env_signal_blocked(envid_t envid, int blocked)
+{
+	struct Env * e;
+	if (envid2env(envid, &e, 0) < 0) {
+		return -E_BAD_ENV;
+	}
+
+	e->env_signal_blocked = blocked;
+
 	return 0;
 }
 
@@ -680,6 +705,11 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_set_signal_upcall:
 			return sys_set_signal_upcall((envid_t)a1,
 										 (void *)a2);
+		case SYS_get_env_signal_blocked:
+			return sys_get_env_signal_blocked((envid_t)a1);
+		case SYS_set_env_signal_blocked:
+			return sys_set_env_signal_blocked((envid_t)a1,
+											  (int)a2);
 
 		default:
 			return -E_INVAL;

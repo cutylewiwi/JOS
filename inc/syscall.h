@@ -29,6 +29,8 @@ enum {
 	SYS_kill,
 	SYS_after_signal_handler,
 	SYS_set_signal_upcall,
+	SYS_get_env_signal_blocked,
+	SYS_set_env_signal_blocked,
 	
 	NSYSCALLS
 };

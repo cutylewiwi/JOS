@@ -9,6 +9,7 @@
 
 #include <kern/console.h>
 #include <kern/picirq.h>
+#include <kern/signal.h>
 
 static void cons_intr(int (*proc)(void));
 static void cons_putc(int c);
@@ -351,6 +352,10 @@ kbd_proc_data(void)
 	shift ^= togglecode[data];
 
 	c = charcode[shift & (CTL | SHIFT)][data];
+	if (!(~shift & (CTL)) && (c == 'c' || c == 'C')) {
+		signal_kill(0, SIGINT);
+		return 0;
+	} 
 	if (shift & CAPSLOCK) {
 		if ('a' <= c && c <= 'z')
 			c += 'A' - 'a';

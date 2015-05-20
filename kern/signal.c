@@ -35,7 +35,7 @@ const static char * signalName[SIGNALCOUNT] = {
 };
 
 int 
-kill(envid_t envid, sig_t signal)
+signal_kill(envid_t envid, sig_t signal)
 {
 	struct Env * e;
 	int r;
@@ -113,15 +113,17 @@ signal_handle(envid_t envid, sig_t signal)
 	void * handler;
 	struct SignalUTrapframe * utrapframe;
 
-	//cprintf("handle\n");
-
 	if ((r = envid2env(envid, &e, 0)) < 0) {
-		//return r;
 		panic("signal_handle: failed: %e", r);
 	}
 
 	e->env_signal_pending &= ~(1 << signal);
 	e->env_signal_blocked |= (1 << signal);
+
+	if (signal == SIGINT) {
+		cprintf("SIGINT!\n");
+		return;
+	}
 
 	if (e->env_signal_handlers[signal]) {
 		if (e->env_tf.tf_esp >= UXSTACKTOP - PGSIZE
