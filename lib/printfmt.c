@@ -101,7 +101,7 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 	while (1) {
 		while ((ch = *(unsigned char *) fmt++) != '%') {
 			if (ch == '\0'){
-				string_color = COLOR_WHITE;
+				//string_color = COLOR_WHITE;
 				return;
 			}
 			putch(ch, putdat);
@@ -173,10 +173,12 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 			break;
 
 		// attributed string
+		/*
 		case 'm':
 			num = getint(&ap, lflag);
 			string_color = num;
 			break;
+		*/
 
 		// error message
 		case 'e':

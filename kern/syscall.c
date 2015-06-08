@@ -95,6 +95,13 @@ sys_exofork(void)
 	forkEnv->env_tf = curenv->env_tf;
 	forkEnv->env_tf.tf_regs.reg_eax = 0;
 
+	for (flag = 0; flag < 32; flag++) {
+		forkEnv->env_signal_handlers[flag] = curenv->env_signal_handlers[flag];
+	}
+	forkEnv->env_signal_blocked = curenv->env_signal_blocked;
+	forkEnv->env_signal_pending = curenv->env_signal_pending;
+	forkEnv->env_signal_upcall = curenv->env_signal_upcall;
+
 	return forkEnv->env_id;
 }
 
@@ -601,7 +608,7 @@ sys_get_env_signal_blocked(envid_t envid)
 	struct Env * e;
 
 	if (envid2env(envid, &e, 0) < 0) {
-		panic("sys_Get_env_signal_blocked: %e\n", -E_BAD_ENV);
+		panic("sys_get_env_signal_blocked: %e\n", -E_BAD_ENV);
 	}
 
 	return e->env_signal_blocked;

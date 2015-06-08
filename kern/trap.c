@@ -13,6 +13,7 @@
 #include <kern/picirq.h>
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
+#include <kern/signal.h>
 
 static struct Taskstate ts;
 
@@ -241,6 +242,12 @@ trap_dispatch(struct Trapframe *tf)
 
 	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SERIAL) {
 		serial_intr();
+		return;
+	}
+
+	// Final Project
+	if (tf->tf_trapno == T_DIVIDE) {
+		signal_kill(0, SIGFPE);
 		return;
 	}
 

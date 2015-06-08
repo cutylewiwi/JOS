@@ -23,12 +23,16 @@ const static int defaultHandler[SIGNALCOUNT] = {
 	SIGNALTERMINATE,
 	SIGNALTERMINATE,
 	SIGNALTERMINATE,
-	SIGNALTERMINATE
+	SIGNALTERMINATE,
+	SIGNALTERMINATE,
 };
 
+
+
 const static char * signalName[SIGNALCOUNT] = {
-	"SIGHUB",
 	"SIGINT",
+	"SIGFPE",
+	"SIGKILL",
 	"SIGUSR1",
 	"SIGUSR2",
 	"NSYGNAL"
@@ -42,6 +46,10 @@ signal_kill(envid_t envid, sig_t signal)
 
 	if ((r = envid2env(envid, &e, 0)) < 0) {
 		return r;
+	}
+
+	if (!e) {
+		return -E_BAD_ENV;
 	}
 
 	e->env_signal_pending |= (1 << signal);
@@ -68,41 +76,43 @@ set_signal_handler(envid_t envid, sig_t signal, void* handler)
 	return 0;
 }
 
-static int 
+static void
 signal_terminate(struct Env * env, sig_t signal)
 {
 	cprintf("env [%08x] terminate by signal %s\n", env->env_id, signalName[signal]);
 	//panic("sigabort");
 	env_destroy(env);
-	return 0;
+
+	sched_yield();
 }
 
-static int
+static void
 signal_ignore(struct Env * env, sig_t signal)
 {
 	cprintf("env [%08x] ignores signal %s\n", env->env_id, signalName[signal]);
-
-	return 0;
+	env->env_signal_blocked &= ~(1 << signal);
 }
 
-static int
+static void
 signal_stop(struct Env * env, sig_t signal)
 {
 	cprintf("env [%08x] stoped by signal %s\n", env->env_id, signalName[signal]);
 
 	env->env_status = ENV_NOT_RUNNABLE;
+	env->env_signal_blocked &= ~(1 << signal);
 
-	return 0;
+	sched_yield();
 }
 
-static int
+static void
 signal_cont(struct Env * env, sig_t signal)
 {
 	cprintf("env [%08x] continued by signal %s\n", env->env_id, signalName[signal]);
 
 	env->env_status = ENV_RUNNABLE;
+	env->env_signal_blocked &= ~(1 << signal);
 
-	return 0;
+	env_run(env);
 }
 
 void
@@ -120,11 +130,11 @@ signal_handle(envid_t envid, sig_t signal)
 	e->env_signal_pending &= ~(1 << signal);
 	e->env_signal_blocked |= (1 << signal);
 
-	if (signal == SIGINT) {
-		cprintf("SIGINT!\n");
-		e->env_signal_blocked &= ~(1 << signal);
-		return;
-	}
+	// if (signal == SIGINT) {
+	// 	cprintf("SIGINT!\n");
+	// 	e->env_signal_blocked &= ~(1 << signal);
+	// 	return;
+	// }
 
 	if (e->env_signal_handlers[signal]) {
 		if (e->env_tf.tf_esp >= UXSTACKTOP - PGSIZE

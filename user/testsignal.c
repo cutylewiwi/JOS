@@ -22,18 +22,13 @@ umain(int argc, char ** argv)
 		cprintf("ooooops!\n");
 	}
 	else if (!child) {
-		//sys_yield();
-		//sys_yield();
 		cprintf("this is child: %08x, sending signal to parent: %08x\n", thisenv->env_id, thisenv->env_parent_id);
 		kill(thisenv->env_parent_id, SIGUSR1);
 		sys_yield();
-		//cprintf("kill\n");
 		kill(thisenv->env_parent_id, SIGUSR1);
 		sys_yield();
-		//cprintf("kill\n");
 		kill(thisenv->env_parent_id, SIGUSR1);
 		sys_yield();
-		//cprintf("kill\n");
 		kill(thisenv->env_parent_id, SIGUSR1);
 		sys_yield();
 	}

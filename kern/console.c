@@ -5,7 +5,7 @@
 #include <inc/kbdreg.h>
 #include <inc/string.h>
 #include <inc/assert.h>
-#include <inc/attributed.h>
+//#include <inc/attributed.h>
 
 #include <kern/console.h>
 #include <kern/picirq.h>
@@ -65,7 +65,6 @@ serial_proc_data(void)
 		return -1;
 	
 	c = inb(COM1+COM_RX);
-	cprintf("c = %d\n", c);
 
 	if (c == SER_CTR_C) {
 		signal_kill(0, SIGINT);
@@ -185,9 +184,9 @@ static void
 cga_putc(int c)
 {
 	// if no attribute given, then use black on white
-	if (!string_color) string_color = COLOR_WHITE;
+	//if (!string_color) string_color = COLOR_WHITE;
 	if (!(c & ~0xFF))
-		c |= string_color;
+		c |= 0x0700;
 
 	switch (c & 0xff) {
 	case '\b':

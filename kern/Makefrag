@@ -103,7 +103,9 @@ KERN_BINFILES += user/testsignal \
 			user/testrecursivesignal \
 			user/testdefaultsignalhandler \
 			user/testsignalblockmask \
-			user/input
+			user/input	\
+			user/testfpehandler \
+			user/testmultiplesignal
 
 KERN_OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(KERN_SRCFILES))
 KERN_OBJFILES := $(patsubst %.S, $(OBJDIR)/%.o, $(KERN_OBJFILES))

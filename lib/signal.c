@@ -1,14 +1,17 @@
 #include <inc/signal.h>
+#include <inc/lib.h>
 
 extern int sys_signal(envid_t envid, sig_t signo, void * handler);
 extern int sys_kill(envid_t envid, sig_t signal);
 extern int sys_get_env_signal_blocked(envid_t envid);
 extern int sys_set_env_signal_blocked(envid_t envid, sigset_t sigset);
-extern struct Env * thisenv;
 
 int 
 signal(sig_t signo, void (* handler)(sig_t sig))
 {
+	if (signo == SIGKILL) {
+		panic("could not set handler for SIGKILL!\n");
+	}
 	return sys_signal(0, signo, (void *)handler);
 }
 

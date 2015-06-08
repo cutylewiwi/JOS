@@ -72,7 +72,7 @@ struct Env {
 	// final signals
 	unsigned env_signal_pending;	// signal pending bit vectors
 	unsigned env_signal_blocked;	// signal blocking bit vectors
-	void * env_signal_upcall;		// singal handler upcall
+	void * env_signal_upcall;		// signal handler upcall
 	void * env_signal_handlers[SIGNALCOUNT];	// signal handlers
 };
 

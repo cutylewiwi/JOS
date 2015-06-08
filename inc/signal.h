@@ -6,25 +6,15 @@
 #include <inc/types.h>
 #include <inc/env.h>
 
-#define SIGNALCOUNT 13
-
 typedef int32_t sig_t;
 typedef int32_t sigset_t;
 
 enum {
 	SIGINT = 0,
-	SIGQUIT,
-	SIGILL,
 	SIGFPE,
 	SIGKILL,
 	SIGUSR1,
-	SIGSEGV,
 	SIGUSR2,
-	SIGALARM,
-	SIGTERM,
-	SIGCONT,
-	SIGSTOP,
-	SIGTSTP,
 	NSYGNAL
 };
 
